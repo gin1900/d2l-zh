@@ -2,6 +2,8 @@
 **/__pycache__
 data/
 *.json
+!contrib/failure_rate_sample_input.json
+!static/failure_rate_sample_report.json
 *.params
 *.DS_Store
 *.csv

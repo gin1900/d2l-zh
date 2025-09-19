@@ -1,0 +1,49 @@
+{
+  "resources": [
+    {"name": "AGV-1", "failure_rate_per_hour": 0.004},
+    {"name": "Transfer-Car", "failure_rate_per_hour": 0.0035},
+    {"name": "Palletizer", "failure_rate_per_hour": 0.0025}
+  ],
+  "runs": [
+    {
+      "run_id": "sim-001",
+      "usage_hours": {
+        "AGV-1": 1.25,
+        "Transfer-Car": 0.80,
+        "Palletizer": 0.60
+      }
+    },
+    {
+      "run_id": "sim-002",
+      "usage_hours": {
+        "AGV-1": 0.95,
+        "Transfer-Car": 0.40,
+        "Palletizer": 0.55
+      }
+    },
+    {
+      "run_id": "sim-003",
+      "usage_hours": {
+        "AGV-1": 1.60,
+        "Transfer-Car": 1.10,
+        "Palletizer": 0.70
+      }
+    },
+    {
+      "run_id": "sim-004",
+      "usage_hours": {
+        "AGV-1": 0.75,
+        "Transfer-Car": 0.30,
+        "Palletizer": 0.00
+      }
+    },
+    {
+      "run_id": "sim-005",
+      "usage_hours": {
+        "AGV-1": 1.40,
+        "Transfer-Car": 0.90,
+        "Palletizer": 0.65
+      }
+    }
+  ]
+}
