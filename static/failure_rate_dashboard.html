@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>资源故障率仿真分析示例</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600&display=swap"
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font-family: "Noto Sans SC", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 2rem 1rem 4rem;
+        background: #f5f7fb;
+        color: #202124;
+      }
+      h1,
+      h2 {
+        text-align: center;
+        font-weight: 600;
+      }
+      h1 {
+        margin-bottom: 0.5rem;
+      }
+      h2 {
+        margin-top: 2.5rem;
+        font-size: 1.4rem;
+      }
+      p.description {
+        text-align: center;
+        margin: 0 auto 2rem;
+        max-width: 60ch;
+        line-height: 1.6;
+      }
+      .summary-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 15px 35px rgba(31, 89, 222, 0.12);
+        padding: 1.5rem;
+        margin: 0 auto 2rem;
+        max-width: 960px;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+      }
+      .summary-item {
+        background: linear-gradient(135deg, rgba(45, 126, 255, 0.12), rgba(45, 126, 255, 0));
+        border-radius: 12px;
+        padding: 1rem;
+      }
+      .summary-item h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: #1a3d8f;
+      }
+      .summary-item p {
+        margin: 0.25rem 0 0;
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border-bottom: 1px solid rgba(31, 89, 222, 0.15);
+        padding: 0.75rem;
+        text-align: center;
+      }
+      th {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #1a3d8f;
+      }
+      tbody tr:hover {
+        background: rgba(45, 126, 255, 0.08);
+      }
+      .charts {
+        display: grid;
+        gap: 2rem;
+        margin-top: 2rem;
+      }
+      canvas {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 15px 35px rgba(31, 89, 222, 0.12);
+        padding: 1rem;
+      }
+      .footer {
+        margin-top: 3rem;
+        font-size: 0.9rem;
+        text-align: center;
+        color: #5f6368;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #10141c;
+          color: #e8eaed;
+        }
+        .summary-card,
+        canvas {
+          background: #1f2733;
+          box-shadow: none;
+        }
+        th,
+        td {
+          border-color: rgba(255, 255, 255, 0.08);
+        }
+        tbody tr:hover {
+          background: rgba(80, 132, 255, 0.18);
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <h1>保障效能仿真 · 资源故障率分析</h1>
+    <p class="description">
+      该示例展示了如何基于多次流程仿真运行，汇总各类资源的使用时长与故障率，
+      得出资源级别的综合故障概率与期望故障次数。页面所用数据来源于
+      <code>failure_rate_sample_report.json</code>，可替换成后台实际计算的统计结果。
+    </p>
+
+    <section id="summary" class="summary-card" hidden>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <h3>统计时间</h3>
+          <p id="summary-generated"></p>
+        </div>
+        <div class="summary-item">
+          <h3>仿真轮次</h3>
+          <p id="summary-runs"></p>
+        </div>
+        <div class="summary-item">
+          <h3>资源数量</h3>
+          <p id="summary-resources"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-card" style="overflow-x: auto">
+      <table id="resource-table">
+        <thead>
+          <tr>
+            <th>资源</th>
+            <th>每小时故障率</th>
+            <th>累计使用时长 (h)</th>
+            <th>参与仿真次数</th>
+            <th>期望故障次数</th>
+            <th>综合故障概率</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="charts summary-card">
+      <h2>综合故障概率 (单位：%)</h2>
+      <canvas id="probability-chart" height="280"></canvas>
+      <h2>期望故障次数</h2>
+      <canvas id="expected-chart" height="280"></canvas>
+    </section>
+
+    <footer class="footer" id="footer"></footer>
+
+    <script>
+      const REPORT_URL = "failure_rate_sample_report.json";
+
+      function formatPercent(value, fractionDigits = 2) {
+        return `${(value * 100).toFixed(fractionDigits)}%`;
+      }
+
+      function formatNumber(value, fractionDigits = 2) {
+        return Number.parseFloat(value).toFixed(fractionDigits);
+      }
+
+      function setSummary(report) {
+        const summarySection = document.getElementById("summary");
+        document.getElementById("summary-generated").textContent = new Date(
+          report.generated_at
+        ).toLocaleString();
+        document.getElementById("summary-runs").textContent = report.total_runs;
+        document.getElementById("summary-resources").textContent =
+          report.resources.length;
+        summarySection.hidden = false;
+      }
+
+      function populateTable(resources) {
+        const tbody = document.querySelector("#resource-table tbody");
+        tbody.textContent = "";
+        for (const resource of resources) {
+          const tr = document.createElement("tr");
+
+          const cells = [
+            resource.name,
+            formatPercent(resource.failure_rate_per_hour, 2),
+            formatNumber(resource.total_usage_hours),
+            resource.exposure_count,
+            formatNumber(resource.expected_failures, 4),
+            formatPercent(resource.overall_failure_probability, 2),
+          ];
+
+          for (const value of cells) {
+            const td = document.createElement("td");
+            td.textContent = value;
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+      }
+
+      function buildProbabilityChart(resources) {
+        const ctx = document.getElementById("probability-chart").getContext("2d");
+        return new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: resources.map((r) => r.name),
+            datasets: [
+              {
+                label: "综合故障概率",
+                data: resources.map((r) => r.overall_failure_probability * 100),
+                backgroundColor: "rgba(45, 126, 255, 0.7)",
+                borderRadius: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) =>
+                    `${context.dataset.label}: ${context.parsed.y.toFixed(3)}%`,
+                },
+              },
+            },
+            scales: {
+              y: {
+                title: { display: true, text: "概率 (%)" },
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      }
+
+      function buildExpectedChart(resources) {
+        const ctx = document.getElementById("expected-chart").getContext("2d");
+        return new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: resources.map((r) => r.name),
+            datasets: [
+              {
+                label: "期望故障次数",
+                data: resources.map((r) => r.expected_failures),
+                backgroundColor: "rgba(255, 171, 64, 0.7)",
+                borderRadius: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) =>
+                    `${context.dataset.label}: ${context.parsed.y.toFixed(4)}`,
+                },
+              },
+            },
+            scales: {
+              y: {
+                title: { display: true, text: "次数" },
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      }
+
+      function setFooter(assumptions = {}) {
+        const footer = document.getElementById("footer");
+        const entries = Object.entries(assumptions);
+        if (!entries.length) {
+          footer.textContent = "";
+          return;
+        }
+        const lines = entries.map(
+          ([key, value]) => `${key.replace(/_/g, " ")}: ${value}`
+        );
+        footer.textContent = `建模假设：${lines.join("；")}`;
+      }
+
+      async function bootstrap() {
+        try {
+          const response = await fetch(REPORT_URL);
+          if (!response.ok) {
+            throw new Error(`无法加载 ${REPORT_URL} (${response.status})`);
+          }
+          const report = await response.json();
+          setSummary(report);
+          populateTable(report.resources);
+          buildProbabilityChart(report.resources);
+          buildExpectedChart(report.resources);
+          setFooter(report.assumptions);
+        } catch (error) {
+          const container = document.querySelector("#resource-table tbody");
+          container.innerHTML = `<tr><td colspan="6">数据加载失败：${error.message}</td></tr>`;
+          console.error(error);
+        }
+      }
+
+      bootstrap();
+    </script>
+  </body>
+</html>

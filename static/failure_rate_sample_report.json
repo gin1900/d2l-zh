@@ -1,0 +1,113 @@
+{
+  "generated_at": "2025-09-19T00:53:12.015188+00:00",
+  "total_runs": 5,
+  "resources": [
+    {
+      "name": "AGV-1",
+      "failure_rate_per_hour": 0.004,
+      "total_usage_hours": 5.95,
+      "exposure_count": 5,
+      "expected_failures": 0.0237872128,
+      "overall_failure_probability": 0.0235656173,
+      "average_failure_probability": 0.0047574426,
+      "per_run": [
+        {
+          "run_id": "sim-001",
+          "usage_hours": 1.25,
+          "failure_probability": 0.0049974975
+        },
+        {
+          "run_id": "sim-002",
+          "usage_hours": 0.95,
+          "failure_probability": 0.0038003805
+        },
+        {
+          "run_id": "sim-003",
+          "usage_hours": 1.6,
+          "failure_probability": 0.0063923159
+        },
+        {
+          "run_id": "sim-004",
+          "usage_hours": 0.75,
+          "failure_probability": 0.0030015025
+        },
+        {
+          "run_id": "sim-005",
+          "usage_hours": 1.4,
+          "failure_probability": 0.0055955164
+        }
+      ]
+    },
+    {
+      "name": "Transfer-Car",
+      "failure_rate_per_hour": 0.0035,
+      "total_usage_hours": 3.5,
+      "exposure_count": 5,
+      "expected_failures": 0.0122536204,
+      "overall_failure_probability": 0.0121965,
+      "average_failure_probability": 0.0024507241,
+      "per_run": [
+        {
+          "run_id": "sim-001",
+          "usage_hours": 0.8,
+          "failure_probability": 0.0028009814
+        },
+        {
+          "run_id": "sim-002",
+          "usage_hours": 0.4,
+          "failure_probability": 0.0014014728
+        },
+        {
+          "run_id": "sim-003",
+          "usage_hours": 1.1,
+          "failure_probability": 0.0038493255
+        },
+        {
+          "run_id": "sim-004",
+          "usage_hours": 0.3,
+          "failure_probability": 0.0010512888
+        },
+        {
+          "run_id": "sim-005",
+          "usage_hours": 0.9,
+          "failure_probability": 0.003150552
+        }
+      ]
+    },
+    {
+      "name": "Palletizer",
+      "failure_rate_per_hour": 0.0025,
+      "total_usage_hours": 2.5,
+      "exposure_count": 4,
+      "expected_failures": 0.006252894,
+      "overall_failure_probability": 0.0062382861,
+      "average_failure_probability": 0.0015632235,
+      "per_run": [
+        {
+          "run_id": "sim-001",
+          "usage_hours": 0.6,
+          "failure_probability": 0.0015007509
+        },
+        {
+          "run_id": "sim-002",
+          "usage_hours": 0.55,
+          "failure_probability": 0.0013757744
+        },
+        {
+          "run_id": "sim-003",
+          "usage_hours": 0.7,
+          "failure_probability": 0.001750657
+        },
+        {
+          "run_id": "sim-005",
+          "usage_hours": 0.65,
+          "failure_probability": 0.0016257117
+        }
+      ]
+    }
+  ],
+  "assumptions": {
+    "故障率定义": "failure_rate_per_hour 表示每使用一小时发生故障的概率",
+    "时间建模": "将离散故障率转换为指数分布失效率，以支持任意时长的使用"
+  }
+}
